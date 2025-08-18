@@ -12,9 +12,11 @@
 #include<SDL2/SDL.h>
 #include<thread>
 
-#include "../SSTDLIB/essentials.h"
+#include<fstream>
+
+#include "essentials.h"
 #include "fabric.h"
-#include "fabric_model.h"
+#include "fabric_model_5.h"
 
 void draw_circle(SDL_Renderer* renderer, int cx, int cy, int radius) {
 	const int segments = 100;
@@ -66,6 +68,8 @@ bool intersect(pos2 a, pos2 b, pos2 c, pos2 d) {
 
 int main(int argc, char** argv) {
 	initialize_fabric();
+
+	std::ofstream fout("state.txt");
 
 	int target_fps = 6000;
 	int mouse_fps = 120;
@@ -226,7 +230,7 @@ int main(int argc, char** argv) {
 				mouse_holding = true;
 
 				int closest_id = main_fabric.closest(mouse_positions.first);
-				if (distance(main_fabric.points[closest_id].get_position(), mouse_positions.first) <= 1.0f)
+				if (!simulating && distance(main_fabric.points[closest_id].get_position(), mouse_positions.first) <= 1.0f)
 					dragging_id = closest_id;
 			} else if (event.type == SDL_MOUSEBUTTONUP) {
 				mouse_holding = false;
@@ -306,15 +310,19 @@ int main(int argc, char** argv) {
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 
-	std::cout<< "\nSTATE :\n";
-	std::cout<< "main_fabric.points = {\n";
+	fout<< "#pragma once\n\n";
+	fout<< "#include\"fabric.h\"\n\n";
+	fout<< "fabric main_fabric(500.0f, 2.0f);\n";
+	fout<< "void initialize_fabric() {\n";
+	fout<< "\tmain_fabric.points = {\n";
 	for (point &p : main_fabric.points)
-		std::cout<< "\tpoint(" << p.x << ", " << p.y << ", " << p.mass << ", " << (p.pinned ? "true" : "false") << "),\n";
-	std::cout<< "};\n";
-	std::cout<< "main_fabric.connections = {\n";
+		fout<< "\t\tpoint(" << p.x << ", " << p.y << ", " << p.mass << ", " << (p.pinned ? "true" : "false") << "),\n";
+	fout<< "\t};\n";
+	fout<< "\tmain_fabric.connections = {\n";
 	for (std::pair<int, int> &conn : main_fabric.connections)
-		std::cout<< "\tstd::make_pair(" << conn.first << ", " << conn.second << "),\n";
-	std::cout<< "};\n";
+		fout<< "\t\tstd::make_pair(" << conn.first << ", " << conn.second << "),\n";
+	fout<< "\t};\n";
+	fout<< "}\n";
 
 	return 0;
 }
